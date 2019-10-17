@@ -2,6 +2,13 @@ import ballerina/config;
 import ballerina/io;
 import ballerinax/java.jdbc;
 
+public type Student record  {
+    int std_id;
+    string name;
+    int age;
+    string address;
+};
+
 # The `createDbConn` function is attached to the `studentMgtDb` object.
 #
 # + return - This is the description of the return value of

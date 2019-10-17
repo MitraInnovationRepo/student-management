@@ -3,15 +3,10 @@ import ballerina/http;
 import ballerina/io;
 import ballerina/jsonutils;
 import ballerinax/java.jdbc;
+import studentDbHandler as stdDbHandler;
 
-jdbc:Client stdMgtDB = createDbConn();
-
-type Student record {
-    int std_id;
-    string name;
-    int age;
-    string address;
-};
+jdbc:Client stdMgtDB = stdDbHandler:createDbConn();
+//stdDbHandler:Student|error s=new ();
 
 listener http:Listener studentMgtServiceListener = new (config:getAsInt("student.listener.port"));
 
@@ -27,9 +22,9 @@ service studentMgtService on studentMgtServiceListener {
     }
     resource function getStudent(http:Caller caller, http:Request req) {
         io:println("\nThe select operation - Select students from db");
-        var selectStudents = stdMgtDB->select("SELECT * FROM student", Student);
+        var selectStudents = stdMgtDB->select("SELECT * FROM student", stdDbHandler:Student);
         http:Response response = new;
-        if (selectStudents is table<Student>) {
+        if (selectStudents is table<stdDbHandler:Student>) {
             json jsonConversionRet = jsonutils:fromTable(selectStudents);
             response.setJsonPayload(jsonConversionRet);
             response.statusCode = 200;
@@ -42,12 +37,12 @@ service studentMgtService on studentMgtServiceListener {
 
     @http:ResourceConfig {
         methods: ["POST"],
-        path: "/addStudent",
+        path: "/",
         body: "std",
         consumes: ["application/json"]
     }
 
-    resource function addStudent(http:Caller caller, http:Request req, Student std) {
+    resource function addStudent(http:Caller caller, http:Request req, stdDbHandler:Student std) {
         io:println("\nThe Insert operation - Insert students to db");
 
         int sId = std.std_id;
@@ -61,7 +56,7 @@ service studentMgtService on studentMgtServiceListener {
 
     @http:ResourceConfig {
         methods: ["DELETE"],
-        path: "/deleteStudent/{std_id}"
+        path: "/{std_id}"
     }
 
     resource function deleteStudent(http:Caller caller, http:Request req, string std_id) {
