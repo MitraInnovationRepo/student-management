@@ -2,7 +2,7 @@ import ballerina/config;
 import ballerina/io;
 import ballerinax/java.jdbc;
 
-public type Student record  {
+public type Student record {
     int std_id;
     string name;
     int age;
@@ -26,7 +26,7 @@ public function createDbConn() returns jdbc:Client {
 }
 
 function createTable(jdbc:Client studentMgtDb) {
-    io:println("The update operation - Creating a table");
+    io:println("Creating student table if not exists");
     var createTable = studentMgtDb->update("CREATE TABLE IF NOT EXISTS student (std_id INT(11) NOT NULL AUTO_INCREMENT, name VARCHAR(100) NOT NULL, age INT(11) NOT NULL, address VARCHAR(200) NOT NULL, PRIMARY KEY (std_id))");
     handleDbResponse(createTable, "Create student table");
 }
@@ -36,6 +36,7 @@ function handleDbResponse(jdbc:UpdateResult | jdbc:Error returned, string messag
         io:println(message, " status: ", returned.updatedRowCount);
     } else {
         io:println(message, " failed: ", <string>returned.detail()["message"]);
+    }
 }
 
-}
+

@@ -1,14 +1,19 @@
+import studentHandler as stdHandler;
 import ballerina/config;
 import ballerina/http;
 import ballerina/io;
-import ballerina/jsonutils;
 import ballerinax/java.jdbc;
-import studentDbHandler as stdDbHandler;
-
-jdbc:Client stdMgtDB = stdDbHandler:createDbConn();
-//stdDbHandler:Student|error s=new ();
-
-listener http:Listener studentMgtServiceListener = new (config:getAsInt("student.listener.port"));
+jdbc:Client stdMgtDbConn = stdHandler:createDbConn();
+//listener http:Listener studentMgtServiceListener = new (config:getAsInt("student.listener.port"));
+listener http:Listener studentMgtServiceListener
+    = new(config:getAsInt("student.listener.port", 9095), config = {
+        secureSocket: {
+            keyStore: {
+                path: "${ballerina.home}/bre/security/ballerinaKeystore.p12",
+                password: config:getAsString("student.listener.password")
+            }
+        }
+});
 
 @http:ServiceConfig {
     basePath: "/students"
@@ -20,19 +25,21 @@ service studentMgtService on studentMgtServiceListener {
         methods: ["GET"],
         path: "/"
     }
-    resource function getStudent(http:Caller caller, http:Request req) {
+    resource function getAllStudents(http:Caller caller, http:Request req) {
         io:println("\nThe select operation - Select students from db");
-        var selectStudents = stdMgtDB->select("SELECT * FROM student", stdDbHandler:Student);
-        http:Response response = new;
-        if (selectStudents is table<stdDbHandler:Student>) {
-            json jsonConversionRet = jsonutils:fromTable(selectStudents);
-            response.setJsonPayload(jsonConversionRet);
-            response.statusCode = 200;
-        } else {
-            response.setPayload("Error occured in get students");
-            response.statusCode = 500;
-        }
-        checkpanic caller->respond(response);
+        var selectStudents = stdMgtDbConn->select("SELECT * FROM student", stdHandler:Student);
+        stdHandler:handleSelect(selectStudents, caller, "Get All Students ", true);
+    }
+
+    @http:ResourceConfig {
+        methods: ["GET"],
+        path: "/{std_id}"
+    }
+    resource function getStudentDataById(http:Caller caller, http:Request req, string std_id) {
+        io:println("\nThe select operation - Get student Data by Id " + std_id);
+        jdbc:Parameter paramStdId = {sqlType: "INTEGER", value:std_id};
+        var studentData = stdMgtDbConn->select("SELECT * FROM student where std_id = ?", stdHandler:Student, paramStdId);
+        stdHandler:handleSelect(studentData, caller, "Get Student by id " + <@untainted> std_id, true);
     }
 
     @http:ResourceConfig {
@@ -42,7 +49,7 @@ service studentMgtService on studentMgtServiceListener {
         consumes: ["application/json"]
     }
 
-    resource function addStudent(http:Caller caller, http:Request req, stdDbHandler:Student std) {
+    resource function addStudent(http:Caller caller, http:Request req, stdHandler:Student std) {
         io:println("\nThe Insert operation - Insert students to db");
 
         int sId = std.std_id;
@@ -50,8 +57,8 @@ service studentMgtService on studentMgtServiceListener {
         int sAge = std.age;
         var sAddress = std.address;
 
-        var addStudents = stdMgtDB->update("INSERT INTO student(std_id, name, age, address) VALUES (?, ?, ?, ?)", sId, sName, sAge, sAddress);
-        handleUpdate(addStudents, caller, "Add Student", true);
+        var addStudents = stdMgtDbConn->update("INSERT INTO student(std_id, name, age, address) VALUES (?, ?, ?, ?)", sId, sName, sAge, sAddress);
+        stdHandler:handleUpdate(addStudents, caller, "Add Student", true);
     }
 
     @http:ResourceConfig {
@@ -61,30 +68,7 @@ service studentMgtService on studentMgtServiceListener {
 
     resource function deleteStudent(http:Caller caller, http:Request req, string std_id) {
         io:println("\nThe Delete operation - Delete student with std_id " + std_id);
-        var deleteStudents = stdMgtDB->update("DELETE FROM student WHERE std_id = ?", std_id);
-        handleUpdate(deleteStudents, caller, "Delete Student", true);
+        var deleteStudents = stdMgtDbConn->update("DELETE FROM student WHERE std_id = ?", std_id);
+        stdHandler:handleUpdate(deleteStudents, caller, "Delete Student", true);
     }
-}
-
-function handleUpdate(jdbc:UpdateResult | error returned, http:Caller caller, string message, boolean isRespond) {
-
-    if (returned is jdbc:UpdateResult) {
-        io:println(message, " status: ", returned.updatedRowCount);
-        if (isRespond) {
-            sendResponse(caller, message + " Successful", 200);
-        }
-    } else {
-        error err = returned;
-        io:println(message, " failed: ", <string>err.detail()["message"]);
-        if (isRespond) {
-            sendResponse(caller, "Unable to " + message, 500);
-        }
-    }
-}
-
-function sendResponse(http:Caller caller, string payloadMsg, int statusCode) {
-    http:Response response = new;
-    response.setPayload(payloadMsg);
-    response.statusCode = statusCode;
-    checkpanic caller->respond(response);
 }
