@@ -1,0 +1,21 @@
+[student.jdbc]
+username="root"
+password="root"
+db="studentmgtballerina"
+dbHost="localhost"
+dbPort="3306"
+
+[student.listener]
+port=9090
+password="@encrypted:{dltvLVQcRqAgJCwTt6///zzt8TmNIqZkFB1aYAqSr8Y=}"
+
+[b7a.users]
+    [b7a.users.user1]
+    password="password1"
+    scopes="scope1"
+    [b7a.users.user2]
+    password="password2"
+    scopes="scope2"
+    [b7a.users.user3]
+    password="password3"
+    scopes="scope1,scope2"
