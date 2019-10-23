@@ -37,6 +37,7 @@ You can notice this will delete ./config/secret.txt file when service up.
 When you are going to run the project at next time either you can add ./config/secret.txt file and give above command or else just run without --b7a.config.secret like below.
 
 `ballerina run .\target\bin\studentService.jar --b7a.config.file=./config/studentConf.toml`
+
 This will ask user input for decryption.
 
     ballerina: enter secret for config value decryption:
