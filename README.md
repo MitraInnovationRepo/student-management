@@ -11,6 +11,7 @@ Use Case mainly covers;
 * Service implementation with CRUD operations
 * Response and Error Handling
 * Get values through config file
+* Parallel processes
 * Work with multiple modules
 * Security features :
     * Handle tainted values
