@@ -1,7 +1,7 @@
 import ballerinax/java.jdbc;
 import ballerina/http;
-import ballerina/io;
 import ballerina/jsonutils;
+import ballerina/log;
 
 # Description
 #
@@ -12,13 +12,13 @@ import ballerina/jsonutils;
 public function handleUpdate(jdbc:UpdateResult | error returned, http:Caller caller, string message, boolean isRespond) {
 
     if (returned is jdbc:UpdateResult) {
-        io:println(message, " status: ", returned.updatedRowCount);
+        log:printInfo(message + " status: " + returned.updatedRowCount.toString());
         if (isRespond) {
             sendResponse(caller, message + " Successful", 200);
         }
     } else {
         error err = returned;
-        io:println(message, " failed: ", <string>err.detail()["message"]);
+        log:printInfo(message + " failed: " + <string>err.detail()["message"]);
         if (isRespond) {
             sendResponse(caller, "Unable to " + message, 500);
         }
@@ -33,7 +33,7 @@ public function handleSelect(table<Student> | error returned, http:Caller caller
         }
     } else {
         error err = returned;
-        io:println(message, " failed: ", <string>err.detail()["message"]);
+        log:printInfo(message + " failed: " + <string>err.detail()["message"]);
         if (isRespond) {
             sendResponse(caller, "Unable to " + message, 500);
         }

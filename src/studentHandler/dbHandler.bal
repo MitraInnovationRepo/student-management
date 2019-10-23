@@ -1,6 +1,6 @@
 import ballerina/config;
-import ballerina/io;
 import ballerinax/java.jdbc;
+import ballerina/log;
 
 public type Student record {
     int std_id;
@@ -26,16 +26,16 @@ public function createDbConn() returns jdbc:Client {
 }
 
 function createTable(jdbc:Client studentMgtDb) {
-    io:println("Creating student table if not exists");
+    log:printInfo("Creating student table if not exists");
     var createTable = studentMgtDb->update("CREATE TABLE IF NOT EXISTS student (std_id INT(11) NOT NULL AUTO_INCREMENT, name VARCHAR(100) NOT NULL, age INT(11) NOT NULL, address VARCHAR(200) NOT NULL, PRIMARY KEY (std_id))");
     handleDbResponse(createTable, "Create student table");
 }
 
 function handleDbResponse(jdbc:UpdateResult | jdbc:Error returned, string message) {
     if (returned is jdbc:UpdateResult) {
-        io:println(message, " status: ", returned.updatedRowCount);
+        log:printInfo(message + " status: " + returned.updatedRowCount.toString());
     } else {
-        io:println(message, " failed: ", <string>returned.detail()["message"]);
+        log:printInfo(message + " failed: " + <string>returned.detail()["message"]);
     }
 }
 
